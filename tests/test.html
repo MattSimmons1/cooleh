@@ -1,0 +1,15 @@
+<html>
+<script src="js/test.js"></script>
+<script>
+  function handleClick() {
+    fetch("/cooleh.go").then(res => console.log(res));
+    fetch("/fooleh.go").then(res => console.log(res));
+  }
+
+</script>
+<body>
+cool
+<a href="javascript:0;" onclick="handleClick()">cool</a>
+</body>
+
+</html>
