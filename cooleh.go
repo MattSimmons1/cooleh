@@ -59,6 +59,52 @@ var mimetypes = map[string]string{
   ".xml":  "text/xml; charset=utf-8",
 }
 
+func serveDirectory(w http.ResponseWriter, filePath string) {
+  var files []string
+
+  // trim to get directory path
+  i := strings.LastIndex(filePath, "/")
+  if i >= 0 {
+    filePath = filePath[:i]
+  } else {
+    filePath = "."
+  }
+
+  err := filepath.Walk(filePath,
+    func(path string, info os.FileInfo, err error) error {
+      if err != nil {
+        return err
+      }
+
+      if strings.HasSuffix(path, ".html") {
+        files = append(files, "<a href=\"/" + path + "\">" + path + "</a>")
+      }
+
+      return nil
+    })
+  if err != nil {
+    // it could be that the directory doesn't exist - attempt one directory down - recurse until we get to the root
+    if filePath != "." {
+      i = strings.LastIndex(filePath, "/")
+      if i >= 0 {
+        filePath = filePath[:i]
+      } else {
+        filePath = "."
+      }
+      serveDirectory(w, filePath)
+    }
+    return
+  }
+
+  document := strings.Join(files, "<br>")
+
+  w.WriteHeader(200)
+  w.Header().Set("Content-Type", mimetypes[".html"])
+  document = "<p>404 - did you mean one of these:</p> </ br>" + document
+  document = "<html><style>body{color:#282a2e;font-family:monospace;font-size:10px;}</style><body>" + document + "</body><html>"
+  _, _ = w.Write([]byte(document))
+}
+
 func serveFile(w http.ResponseWriter, r *http.Request) {
 
   fileName := r.URL.Path
@@ -75,34 +121,10 @@ func serveFile(w http.ResponseWriter, r *http.Request) {
       fmt.Printf("\n%v\n", t)
       fmt.Printf("· %v - \033[91m404\033[0m\n", r.URL.Path)
 
-      var files []string
-
-      err := filepath.Walk(".",
-        func(path string, info os.FileInfo, err error) error {
-          if err != nil {
-            return err
-          }
-
-          if strings.HasSuffix(path, ".html") {
-            files = append(files, "<a href=\"/" + path + "\">" + path + "</a>")
-          }
-
-          return nil
-        })
-      if err != nil {
-        log.Println(err)
-        return
-      }
-
-      document := strings.Join(files, "<br>")
-
-      w.WriteHeader(200)
-      document = "<p>404 - did you mean one of these:</p> </ br>" + document
-      _, _ = w.Write([]byte(document))
+      serveDirectory(w, fileName)
       return
     }
   }
-
 
   // pick a mime type based on the file extension
   mimeType := ""
@@ -161,7 +183,8 @@ func serveFile(w http.ResponseWriter, r *http.Request) {
 
     if len(files) > 0 {
         suggestion := levenshtein.Suggest(fileName, files)
-        if levenshtein.Distance(fileName, suggestion) < 5 {
+        distance := levenshtein.Distance(fileName, suggestion)
+        if distance < 5 && distance < len(fileName)/2 {
           help = fmt.Sprintf(" - did you mean '%v'?", suggestion)
 
         }
@@ -169,10 +192,10 @@ func serveFile(w http.ResponseWriter, r *http.Request) {
 
     fmt.Printf("· %v - \033[91m404%v\033[0m\n", r.URL.Path, help)
 
-    w.WriteHeader(404)
     if extension == ".html" {
-      w.Header().Set("Content-Type", mimeType)
-      _, _ = w.Write([]byte("404 - not found"))
+      serveDirectory(w, fileName)
+    } else {
+      w.WriteHeader(404)
     }
     return
   } else{
@@ -204,17 +227,6 @@ func server() {
 }
 
 func main() {
-
-  //fmt.Printf("\033[90m • 89 · \033[0m\n")
-  //fmt.Printf("\033[90m • 90 · \033[0m\n")
-  //fmt.Printf("\033[91m • 91 · \033[0m\n")
-  //fmt.Printf("\033[92m • 92 · \033[0m\n")
-  //fmt.Printf("\033[93m • 93 · \033[0m\n")
-  //fmt.Printf("\033[94m • 94 · \033[0m\n")
-  //fmt.Printf("\033[95m • 95 · \033[0m\n")
-  //fmt.Printf("\033[96m • 96 · \033[0m\n")
-  //fmt.Printf("\033[97m • 97 · \033[0m\n")
-
 
   var wg sync.WaitGroup
 

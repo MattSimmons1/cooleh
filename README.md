@@ -1,7 +1,17 @@
 
 # cooleh
 
-Ultra lightweight server written in go. 
+Ultra lightweight server written in go. Intended for quick testing of static sites and web experiments.
+
+Created because `python -m http.server` is too hard to remember.
+
+![](example.png)
+
+Features:
+- clear logging in the terminal for each request, separated by session
+- sends the correct content type headers for all files, including .wasm
+- tells you your IP address within the local network
+- catches typos and suggests corrections 
 
 ### Run
 
