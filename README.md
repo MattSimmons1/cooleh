@@ -23,9 +23,6 @@ In a directory with an HTML file, run:
     
 ### Build
 
-To build the binary yourself:
+To build the binary yourself and install:
 
-    go get github.com/MattSimmons1/cooleh
-    cd $GOPATH/src/github.com/MattSimmons1/cooleh
-    go build
-    go install 
+    go install github.com/MattSimmons1/cooleh
