@@ -3,7 +3,10 @@
 <script>
   function handleClick() {
     fetch("/cooleh.go").then(res => console.log(res));
-    fetch("/fooleh.go").then(res => console.log(res));
+    fetch("/fooleh.go").then(res => console.log(res));  // test suggest similar path
+    fetch("/tests/api/").then(res => console.log(res));  // test append 'index.json' to path
+    fetch("/tests/api/", { method: "OPTIONS" }).then(res => console.log(res));
+    fetch("/cool", { method: "POST" }).then(res => console.log(res));
   }
 
 </script>
