@@ -126,6 +126,9 @@ func serveFile(w http.ResponseWriter, r *http.Request) {
 	if i > -1 {
 		extension = fileName[i:]
 		mimeType = mimetypes[extension]
+	} else if _, err := os.ReadFile(fileName); err == nil {
+		// if there's no extension and a file exists with that extension then assume it's text
+		mimeType = mimetypes[".txt"]
 	} else {
 		// if there's no extension and the method is not GET, add the method to the filename
 		// this allows users to specify the responses for POST, PUT, etc. as api/customers POST.json
@@ -133,21 +136,18 @@ func serveFile(w http.ResponseWriter, r *http.Request) {
 			fileName += " " + r.Method
 		}
 
-		// if there's no extension check if there's an html file with that name
-		extension = ".html"
-		_, err := os.ReadFile(fileName + extension)
-		if err == nil {
-			fileName += extension
-			mimeType = mimetypes[extension]
-		} else {
-			// if there's no html file, check for json (to simulate an API get)
-			extension = ".json"
-			_, err = os.ReadFile(fileName + extension)
+		// if there's no extension check if there's file with that name + a common extension
+		extensions := []string{".html", ".json", ".csv", ".txt", ".xml"}
+		for i := range extensions {
+			extension = extensions[i]
+			_, err := os.ReadFile(fileName + extension)
 			if err == nil {
 				fileName += extension
 				mimeType = mimetypes[extension]
+				break
 			}
 		}
+		// if there are no matches, we will attempt to open a file with no extension and get an error
 	}
 	if mimeType == "" {
 		mimeType = mimetypes["default"]
@@ -166,8 +166,6 @@ func serveFile(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "OPTIONS" {
 			fmt.Printf("\n")
 			fmt.Printf(t+" \u001B[94mOPTIONS\u001B[0m %v \u001B[90m-> None\u001B[0m %v 200\n", r.URL.Path, dash)
-			fmt.Printf("\u001B[90mHint: create a file called '%v' to send a custom response for this request\u001B[0m\n", fileName+".json")
-
 			w.WriteHeader(200)
 			return
 		} else if !isGet {
@@ -236,7 +234,7 @@ func serveFile(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(document))
 }
 
-func server(port string) {
+func Server(port string) {
 	networkIp := ip.Find()
 
 	fmt.Printf("cooleh is running on http://127.0.0.1:%s or http://%s:%s\n", port, networkIp, port)
@@ -265,7 +263,7 @@ func main() {
 
 				Ogre.Growl()
 
-				go server(port)
+				go Server(port)
 
 				wg.Wait()
 
