@@ -1,4 +1,4 @@
-module cooleh
+module github.com/MattSimmons1/cooleh
 
 go 1.21.0
 
